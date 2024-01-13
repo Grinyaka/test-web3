@@ -1,0 +1,102 @@
+@font-face {
+  font-family: 'Proto-mono';
+  src: url('assets/fonts/ProtoMono-Light.ttf') format('truetype');
+  src: url('assets/fonts/ProtoMono-Light.eot');
+  src: url('assets/fonts/ProtoMono-Light.eot?#iefix') format('embedded-opentype'),
+    url('assets/fonts/ProtoMono-Light.woff') format('woff'),
+    url('assets/fonts/ProtoMono-Light.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100%;
+  align-items: center;
+  overflow: auto;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  min-height: fill-available;
+  min-height: -moz-available;
+  min-height: -webkit-fill-available;
+  background-color: black;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+html,
+body {
+  height: fill-available;
+  height: -webkit-fill-available;
+  height: -moz-available;
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  color: rgba(240, 234, 234, 0.80);
+  background-color: #000;
+  letter-spacing: 0.75px;
+  line-height: 22px;
+}
+
+a {
+  text-decoration: none;
+}
+
+* {
+  font-family: 'Proto-mono', sans-serif;
+  box-sizing: border-box;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input {
+  border: none;
+}
+
+input:focus {
+  outline: none;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6a7682 #ffffff;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #6a7682;
+  border-radius: 10px;
+  border: 0px inset #6a7682;
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
