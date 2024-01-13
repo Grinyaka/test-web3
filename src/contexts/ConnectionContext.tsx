@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { Spinner } from 'src/components/Spinner'
 import Web3 from 'web3'
 import { ConnectWalletModal } from '../components/ConnectWalletModal'
-import { ChainToNumber, ChainType } from '../types/ChainType'
+import { ChainToNumber, ChainType, NumberToChain } from '../types/ChainType'
 
 export type ConnectionData = {
   web3: Web3 | undefined
@@ -14,6 +14,7 @@ export type ConnectionData = {
 export interface ConnectionContextType extends ConnectionData {
   walletsMap: Map<WalletType, ExternalProvider>
   connect: (wallet?: WalletType) => Promise<void>
+  disconnect: () => void
   changeNetwork: (chain: ChainType) => Promise<void>
   isReady: boolean
 }
@@ -30,6 +31,7 @@ const ConnectionContext = createContext<ConnectionContextType>({
   currentChain: undefined,
   walletsMap: new Map(),
   connect: async () => {},
+  disconnect: () => {},
   changeNetwork: async () => {},
   isReady: false,
 })
@@ -76,7 +78,15 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
     const newProvider = new Web3Provider(currentWallet)
     try {
       currentWallet.on('accountsChanged', (accounts: string[]) => handleAccountsChanged(accounts))
-      const accounts = (await newProvider.provider.request!({ method: 'eth_requestAccounts' }).catch(e => console.warn(e))) || []
+      currentWallet.on('chainChanged', (chainId: string) => {
+        const chain = NumberToChain(parseInt(chainId))
+        console.log(chain, chainId)
+        updateConnectionData({
+          currentChain: chain,
+        })
+      })
+      const accounts =
+        (await newProvider.provider.request!({ method: 'eth_requestAccounts' }).catch((e) => console.warn(e))) || []
       const currentAddress = accounts.length > 0 ? accounts[0] : undefined
       const currentQueryChain = new URLSearchParams(window.location.search).get('chain') as ChainType | undefined
       const currentStorageChain = localStorage.getItem(LOCAL_STORAGE_KEY_LAST_CHAIN) as ChainType | undefined
@@ -85,12 +95,26 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
         updateConnectionData({
           currentAccount: currentAddress,
         })
-        setCurrentProvider(newProvider)
       }
-      await changeNetwork(currentChain)
+      if (currentChain) {
+        updateConnectionData({
+          currentChain: currentChain,
+        })
+      }
+      setCurrentProvider(newProvider)
     } catch (e) {
       throw e
     }
+  }
+
+  const disconnect = () => {
+    currentProvider?.removeAllListeners()
+    setConnectionData({
+      web3: undefined,
+      currentAccount: undefined,
+      currentChain: undefined,
+    })
+    setCurrentProvider(undefined)
   }
 
   const getLastProvider = (): ExternalProvider | undefined => {
@@ -112,7 +136,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const updateConnectionData = (data: Partial<ConnectionData>): void => {
-    setConnectionData({ ...connectionData, ...data })
+    setConnectionData((prev) => ({ ...prev, ...data }))
   }
   const changeNetwork = async (chain: ChainType) => {
     localStorage.setItem(LOCAL_STORAGE_KEY_LAST_CHAIN, chain)
@@ -162,7 +186,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
           allWallets.set(WalletType.Zerion, ethereum)
           if (coinbaseWallet) {
             allWallets.set(WalletType.CoinbaseWallet, coinbaseWallet)
-          }          
+          }
         }
         updateWalletsMap(allWallets)
         // if (allWallets.size === 1) {
@@ -185,6 +209,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
         currentChain: connectionData.currentChain,
         walletsMap,
         connect,
+        disconnect,
         changeNetwork,
         isReady,
       }}
@@ -195,13 +220,14 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
 }
 
 const useConnection = () => {
-  const { web3, currentAccount, currentChain, walletsMap, connect, changeNetwork, isReady } =
+  const { web3, currentAccount, currentChain, walletsMap, connect, disconnect, changeNetwork, isReady } =
     useContext(ConnectionContext)
   return {
     web3,
     currentAccount,
     currentChain,
     walletsMap,
+    disconnect,
     connect,
     changeNetwork,
     isReady,
