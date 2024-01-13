@@ -76,7 +76,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
     const newProvider = new Web3Provider(currentWallet)
     try {
       currentWallet.on('accountsChanged', (accounts: string[]) => handleAccountsChanged(accounts))
-      const accounts = (await newProvider.provider.request!({ method: 'eth_requestAccounts' })) || []
+      const accounts = (await newProvider.provider.request!({ method: 'eth_requestAccounts' }).catch(e => console.warn(e))) || []
       const currentAddress = accounts.length > 0 ? accounts[0] : undefined
       const currentQueryChain = new URLSearchParams(window.location.search).get('chain') as ChainType | undefined
       const currentStorageChain = localStorage.getItem(LOCAL_STORAGE_KEY_LAST_CHAIN) as ChainType | undefined
@@ -152,18 +152,22 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
       if (ethereum.providers?.length) {
         updateWalletsMap(new Map(ethereum.providerMap))
       } else {
-        const coinbaseWallet = ((window as any).coinbaseWalletExtension as Web3Provider) || undefined
+        const coinbaseWallet = ((window as any).coinbaseWalletExtension as ExternalProvider) || undefined
+        const allWallets = new Map<WalletType, ExternalProvider>()
         if (ethereum.isMetaMask) {
-          updateWalletsMap(new Map([[WalletType.MetaMask, ethereum]]))
+          allWallets.set(WalletType.MetaMask, ethereum)
         } else if (ethereum.isCoinbaseWallet) {
-          updateWalletsMap(new Map([[WalletType.CoinbaseWallet, ethereum]]))
+          allWallets.set(WalletType.CoinbaseWallet, ethereum)
         } else if (ethereum.isZerion) {
-          const newMap = new Map([[WalletType.Zerion, ethereum]])
+          allWallets.set(WalletType.Zerion, ethereum)
           if (coinbaseWallet) {
-            newMap.set(WalletType.CoinbaseWallet, coinbaseWallet)
-          }
-          updateWalletsMap(newMap)
+            allWallets.set(WalletType.CoinbaseWallet, coinbaseWallet)
+          }          
         }
+        updateWalletsMap(allWallets)
+        // if (allWallets.size === 1) {
+        //   await connect(allWallets.keys()[0])
+        // }
       }
     }
     setTimeout(() => setIsReady(true), 1000)
