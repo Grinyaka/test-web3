@@ -1,4 +1,4 @@
-import { useConnection } from 'src/contexts/ConnectionContext'
+import { WalletType, useConnection } from 'src/contexts/ConnectionContext'
 import styled from 'styled-components'
 
 const Wrapper = styled.div`
@@ -16,14 +16,17 @@ const WalletsSelect = styled.div`
   margin: auto;
   padding: 20px;
   border-radius: 10px;
-  background-color: ${({theme}) => theme.colors.grey};
+  background-color: ${({ theme }) => theme.colors.grey};
 
   max-width: 900px;
   max-height: 600px;
   width: 100%;
   height: 100%;
 `
-
+const WarningMsg = styled.p`
+  color: yellow;
+  font-size: 14px;
+`
 
 export const ConnectWalletModal = () => {
   const { connect, changeNetwork, walletsMap } = useConnection()
@@ -31,18 +34,19 @@ export const ConnectWalletModal = () => {
     <Wrapper>
       <Title>Please, connect your wallet</Title>
       <WalletsSelect>
-        {Array.from(walletsMap.keys()).map((walletType) => {
-          return (
-            <button
-              key={walletType}
-              onClick={async () => {
-                await connect(walletType)
-              }}
-            >
-              {walletType}
-            </button>
-          )
-        })}
+        {walletsMap.has(WalletType.Zerion) && (
+          <WarningMsg>If you need to use Metamask wallet, disable Zerion wallet in your browser extensions.</WarningMsg>
+        )}
+        {Array.from(walletsMap.keys()).map((walletType) => (
+          <button
+            key={walletType}
+            onClick={async () => {
+              await connect(walletType)
+            }}
+          >
+            {walletType}
+          </button>
+        ))}
       </WalletsSelect>
     </Wrapper>
   )
