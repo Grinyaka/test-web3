@@ -25,6 +25,7 @@ const Content = styled.div`
   height: 100%;
 
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 `
@@ -47,6 +48,7 @@ const StyledButton = styled.button`
   background-color: ${({ theme }) => theme.colors.greenLight};
   color: ${({ theme }) => theme.colors.white};
   transition: all 0.2s ease-in-out;
+  cursor: pointer;
   &:hover {
     opacity: 0.8;
     background-color: ${({ theme }) => theme.colors.greenLight};
