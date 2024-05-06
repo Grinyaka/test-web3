@@ -48,21 +48,6 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
   const [walletsMap, updateWalletsMap] = useState<Map<WalletType, ExternalProvider>>(new Map())
   const [isReady, setIsReady] = useState(false)
 
-  const getWalletByType = (type?: WalletType): any | undefined => {
-    const ethereum = (window as any).ethereum
-    if (ethereum.providers?.length) {
-      return ethereum.providerMap.get(type)
-    } else {
-      if (!type) return ethereum
-      if (ethereum.isMetaMask && type === WalletType.MetaMask) {
-        return ethereum
-      }
-      if (ethereum.isCoinbaseWallet && type === WalletType.CoinbaseWallet) {
-        return ethereum
-      } else return ethereum
-    }
-  }
-
   const handleAccountsChanged = (accounts: string[]) => {
     if (accounts.length === 0) {
       setIsReady(false)
@@ -80,7 +65,6 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
       currentWallet.on('accountsChanged', (accounts: string[]) => handleAccountsChanged(accounts))
       currentWallet.on('chainChanged', (chainId: string) => {
         const chain = NumberToChain(parseInt(chainId))
-        console.log(chain, chainId)
         updateConnectionData({
           currentChain: chain,
         })
@@ -120,7 +104,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
   const getLastProvider = (): ExternalProvider | undefined => {
     const ethereum = (window as any).ethereum
     if (ethereum) {
-      if (ethereum.providers?.length) {
+      if (ethereum.providers?.length && ethereum.providers.length > 1) {
         const lastProvider = [...ethereum.providerMap.values()].find((provider) => !!provider.selectedAddress)
         if (lastProvider) {
           return lastProvider
@@ -155,8 +139,6 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
     const ethereum = (window as any).ethereum
 
     if (ethereum !== undefined) {
-      // Autoconnect disabled
-
       // try {
       //   const lastProvider = getLastProvider()
       //   const accounts = await ethereum.request({ method: 'eth_accounts' })
@@ -173,7 +155,7 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
       // } catch (error) {
       //   throw error
       // }
-      if (ethereum.providers?.length) {
+      if (ethereum.providers?.length && ethereum.providers.length > 1) {
         updateWalletsMap(new Map(ethereum.providerMap))
       } else {
         const coinbaseWallet = ((window as any).coinbaseWalletExtension as ExternalProvider) || undefined
@@ -189,13 +171,16 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
         updateWalletsMap(allWallets)
-        // if (allWallets.size === 1) {
-        //   await connect(allWallets.keys()[0])
-        // }
       }
     }
-    setTimeout(() => setIsReady(true), 1000)
+    setTimeout(() => setIsReady(true))
   }
+
+  useEffect(() => {
+    if (walletsMap.size === 1 && !connectionData.currentAccount) {
+      connect(Array.from(walletsMap.keys())[0])
+    }
+  }, [walletsMap.size])
 
   useEffect(() => {
     initConnection()
