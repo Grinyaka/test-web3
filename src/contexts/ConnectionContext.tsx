@@ -23,6 +23,7 @@ export enum WalletType {
   MetaMask = 'MetaMask',
   CoinbaseWallet = 'Coinbase',
   Zerion = 'Zerion',
+  Phantom = 'Phantom',
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
@@ -137,24 +138,24 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
 
   const initConnection = async () => {
     const ethereum = (window as any).ethereum
-
+    const phantomWallet = (window as any).phantom
     if (ethereum !== undefined) {
-      // try {
-      //   const lastProvider = getLastProvider()
-      //   const accounts = await ethereum.request({ method: 'eth_accounts' })
-      //   if (accounts.length > 0) {
-      //     await connect(
-      //       lastProvider?.isMetaMask ?
-      //         WalletType.MetaMask :
-      //         // @ts-ignore
-      //         lastProvider?.isZerion ?
-      //         WalletType.Zerion :
-      //         WalletType.CoinbaseWallet || undefined
-      //       )
-      //   }
-      // } catch (error) {
-      //   throw error
-      // }
+      try {
+        const lastProvider = getLastProvider()
+        const accounts = await ethereum.request({ method: 'eth_accounts' })
+        if (accounts.length > 0) {
+          await connect(
+            lastProvider?.isMetaMask ?
+              WalletType.MetaMask :
+              // @ts-ignore
+              lastProvider?.isZerion ?
+              WalletType.Zerion :
+              WalletType.CoinbaseWallet || undefined
+            )
+        }
+      } catch (error) {
+        throw error
+      }
       if (ethereum.providers?.length && ethereum.providers.length > 1) {
         updateWalletsMap(new Map(ethereum.providerMap))
       } else {
@@ -162,14 +163,20 @@ const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
         const allWallets = new Map<WalletType, ExternalProvider>()
         if (ethereum.isMetaMask) {
           allWallets.set(WalletType.MetaMask, ethereum)
-        } else if (ethereum.isCoinbaseWallet) {
+        }
+        if (ethereum.isCoinbaseWallet) {
           allWallets.set(WalletType.CoinbaseWallet, ethereum)
-        } else if (ethereum.isZerion) {
+        }
+        if (ethereum.isZerion) {
           allWallets.set(WalletType.Zerion, ethereum)
           if (coinbaseWallet) {
             allWallets.set(WalletType.CoinbaseWallet, coinbaseWallet)
           }
         }
+        if (!!phantomWallet && !!phantomWallet.ethereum) {
+          allWallets.set(WalletType.Phantom, phantomWallet.ethereum)
+        }
+        console.log(allWallets)
         updateWalletsMap(allWallets)
       }
     }
